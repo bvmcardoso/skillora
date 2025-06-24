@@ -7,3 +7,5 @@ redis
 python-dotenv
 pytest
 pydantic-settings
+debugpy==1.8.1
+
