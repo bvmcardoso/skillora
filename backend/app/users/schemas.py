@@ -25,3 +25,13 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserRead(UserOut):
+    pass
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
