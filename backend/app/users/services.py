@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from .models import User
 from .schemas import UserCreate
 from .auth import create_access_token, hash_password, verify_password
-from core.config import settings
-from infrastructure.db import get_db
+from app.core.config import settings
+from app.infrastructure.db import get_db
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
