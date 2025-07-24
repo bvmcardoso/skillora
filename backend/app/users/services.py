@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+from typing import cast
 
 from .models import User
 from .schemas import UserCreate
@@ -12,7 +13,7 @@ from app.core.config import settings
 from app.infrastructure.db import get_db
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
 
 def get_current_user(db: Session = Depends(get_db), token: str= Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
@@ -44,7 +45,7 @@ def create_user(db: Session, user_data: UserCreate):
                             detail = 'Email already registered')    
     
     hashed_pw = hash_password(user_data.password)
-    user = User(email=user_data.email, password = hashed_pw)
+    user = User(email=user_data.email, hashed_password = hashed_pw, full_name=user_data.full_name)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -52,7 +53,7 @@ def create_user(db: Session, user_data: UserCreate):
 
 def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.password):
+    if not user or not verify_password(password, cast(str, user.hashed_password)):
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
     
     access_token = create_access_token(data={"sub": user.email})

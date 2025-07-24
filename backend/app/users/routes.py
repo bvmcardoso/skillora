@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.infrastructure.db import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(tags=["Users"])
 
 @router.post("/", response_model = schemas.UserOut, status_code = status.HTTP_201_CREATED)
 def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
