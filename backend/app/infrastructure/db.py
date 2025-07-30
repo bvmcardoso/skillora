@@ -9,6 +9,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+from app.users import models as users_models
+from app.skills import models as skills_models
+
 def get_db():
     db = SessionLocal()
     try:

@@ -17,14 +17,23 @@ services:
       - '6379:6379'
 
   backend:
-    build: .
-    ports:
-      - '8080:8000'
-      - '5678:5678'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
     depends_on:
       - db
       - redis
     env_file:
       - ./backend/.env
+    ports:
+      - '8080:8000'
+      - '5678:5678'
+    environment:
+      - PYTHONPATH=/app
+    command: >
+      python -m debugpy --listen 0.0.0.0:5678
+      -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 volumes:
   pgdata:
