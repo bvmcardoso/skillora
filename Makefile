@@ -1,16 +1,36 @@
-REV ?= "auto"
+# Run bash inside container:
+exec: 
+	docker compose exec backend bash
 
-revision:
-	docker compose exec backend bash -c "PYTHONPATH=/app alembic revision --autogenerate -m '$(REV)'"
+# Start containers:
+up:
+	docker compose up -d
 
-upgrade:
-	docker compose exec backend bash -c "PYTHONPATH=/app alembic upgrade head"
+# Stop containers:
+down:
+	docker compose down
 
-downgrade:
-	docker compose exec backend bash -c "PYTHONPATH=/app alembic downgrade -1"
+# Full reset:
+reset:
+	docker compose down -v
+	docker compose up -d --build 
 
-history:
-	docker compose exec backend bash -c "PYTHONPATH=/app alembic history"
+# Create a new migration:
+migrate-create:
+	docker compose exec backend alembic revision --autogenerate -m "$(name)"
 
-current:
-	docker compose exec backend bash -c "PYTHONPATH=/app alembic current"
+# Apply all migrations:
+migrate-up:
+	docker compose exec backend alembic upgrade head
+
+# Revert last migration:
+migrate-down:
+	docker compose exec backend alembic downgrade -1
+
+# Show current migration:
+migrate-status:
+	docker compose exec backend alembic current
+
+# Open psql shell:
+psql: 
+	docker compose exec db psql -U postgres -d skillora_db
