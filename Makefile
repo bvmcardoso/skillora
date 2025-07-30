@@ -10,6 +10,15 @@ up:
 down:
 	docker compose down
 
+build:
+	docker compose down
+	docker compose up -d --build
+
+build-no-cache:
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+
 # Full reset:
 reset:
 	docker compose down -v
