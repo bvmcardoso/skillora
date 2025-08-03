@@ -6,11 +6,11 @@ from app.skills import schemas, services
 router = APIRouter(tags=["Skills"])
 
 @router.post("/", response_model = schemas.SkillOut, status_code=status.HTTP_201_CREATED)
-def create_skill(skill: schemas.SkillCreate, db: Session = Depends(get_db)):
+async def create_skill(skill: schemas.SkillCreate, db: Session = Depends(get_db)):
     return services.create_skill(db, skill)
 
 @router.get("/", response_model = list[schemas.SkillOut])    
-def get_skills(db: Session = Depends(get_db)):
+async def get_skills(db: Session = Depends(get_db)):
     return services.get_all_skills(db)
 
 

@@ -19,6 +19,9 @@ build-no-cache:
 	docker compose build --no-cache
 	docker compose up -d
 
+logs:
+	docker compose logs -f backend
+
 # Full reset:
 reset:
 	docker compose down -v

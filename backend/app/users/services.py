@@ -15,7 +15,7 @@ from app.infrastructure.db import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
 
-def get_current_user(db: Session = Depends(get_db), token: str= Depends(oauth2_scheme)) -> User:
+async def get_current_user(db: Session = Depends(get_db), token: str= Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
         status_code = status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -37,7 +37,7 @@ def get_current_user(db: Session = Depends(get_db), token: str= Depends(oauth2_s
     return user
 
 
-def create_user(db: Session, user_data: UserCreate):
+async def create_user(db: Session, user_data: UserCreate):
     existing_user = db.query(User).filter(User.email == user_data.email).first()
 
     if existing_user:
@@ -51,7 +51,7 @@ def create_user(db: Session, user_data: UserCreate):
     db.refresh(user)
     return user
 
-def authenticate_user(db: Session, email: str, password: str):
+async def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, cast(str, user.hashed_password)):
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")

@@ -14,15 +14,15 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 
-def hash_password(password: str) -> str:
+async def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+async def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Union[int, None] = None):
+async def create_access_token(data: dict, expires_delta: Union[int, None] = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(
         minutes=expires_delta or ACCESS_TOKEN_EXPIRE_MINUTES

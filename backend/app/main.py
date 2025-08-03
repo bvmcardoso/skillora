@@ -18,12 +18,12 @@ api_router.include_router(skills_router, prefix="/skills")
 app.include_router(api_router)
 
 @app.get("/")
-def root():
+async def root():
     return {"message": "Skillora backend is running"}
 
 
 @app.get("/config")
-def config():
+async def config():
     return {
         "app": settings.app_name,
         "env": settings.environment,
@@ -31,7 +31,7 @@ def config():
     }
 
 @app.get("/ping")
-def ping(db: Session = Depends(get_db)):
+async def ping(db: Session = Depends(get_db)):
     try: 
         db.execute(text("SELECT 1"))
         return {"message": "pong 🏓", "db": "ok"}
