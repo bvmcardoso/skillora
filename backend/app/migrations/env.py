@@ -1,68 +1,88 @@
-import sys, os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Add full path to backend/app to sys.path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-BACKEND_DIR = os.path.join(PROJECT_ROOT, 'backend')
-sys.path.insert(0, BACKEND_DIR)
-
-# Optional debug logs
-# print("APP_DIR:", APP_DIR)
-# print("sys.path:", sys.path)
-
-from alembic import context
-from sqlalchemy import engine_from_config, pool
+# app/migrations/env.py
+import os
+import sys
+import asyncio
 from logging.config import fileConfig
 
-from app.infrastructure.db import Base
+from alembic import context
+from sqlalchemy import MetaData, pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+# ---- Bootstrapping do path / .env ----
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+# ---- App imports (Base + models para o autogenerate “ver”) ----
+from app.infrastructure.db import Base  # declarative_base()
 from app.users.models import User
-from app.core.config import settings
 
-# Alembic Config object (from alembic.ini)
+# Importa aqui outros models que EXISTEM hoje no schema (não importe mais Skill)
+
+# ---- Alembic config ----
 config = context.config
-
-# Set up loggers
 if config.config_file_name is not None:
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# Metadata used for autogeneration of migrations
-target_metadata = Base.metadata
+target_metadata: MetaData = Base.metadata
 
-# Set database URL from environment
-config.set_main_option(
-    "sqlalchemy.url",
-    f"postgresql://{settings.db_user}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_name}"
+# ---- Monta URL assíncrona via settings ----
+from app.core.config import settings
+
+ASYNC_DB_URL = (
+    f"postgresql+asyncpg://{settings.db_user}:{settings.db_password}"
+    f"@{settings.db_host}:{settings.db_port}/{settings.db_name}"
 )
 
+# Para modo offline o Alembic aceita URL async — mas se preferir, pode montar uma sync aqui.
+config.set_main_option("sqlalchemy.url", ASYNC_DB_URL)
+
+
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode (SQL output only)."""
+    """Gera SQL sem conectar (offline)."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
     with context.begin_transaction():
         context.run_migrations()
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode (connects to DB)."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+
+def _run_sync_migrations(connection: Connection) -> None:
+    """Executa migrations usando a conexão síncrona exposta pelo run_sync."""
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_migrations_online() -> None:
+    """Conecta com engine assíncrono e roda migrations."""
+    connectable: AsyncEngine = create_async_engine(
+        config.get_main_option("sqlalchemy.url"),
         poolclass=pool.NullPool,
     )
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
+    async with connectable.connect() as connection:
+        await connection.run_sync(_run_sync_migrations)
+    await connectable.dispose()
 
-# Choose offline or online mode
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    asyncio.run(run_migrations_online())

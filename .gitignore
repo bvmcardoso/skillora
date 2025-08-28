@@ -1,7 +1,43 @@
+# --- Python ---
 .venv/
 __pycache__/
-*.pyc
-*.env
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# --- Environment / configs locais ---
 .env
+*.env
 *.log
 *.sqlite3
+
+# --- Testing ---
+.coverage
+htmlcov/
+.pytest_cache/
+
+# --- Docker ---
+*.pid
+*.tar
+*.bak
+
+# --- Node / Frontend ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.next/
+
+# --- Editor/IDE ---
+.vscode/
+.idea/
+
+# --- Alembic ---
+# mantém migrations no versionador, ignora só cache interno
+backend/app/migrations/__pycache__/
