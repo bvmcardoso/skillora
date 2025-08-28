@@ -1,47 +1,48 @@
-# Run the containers
-up:
+# ==========================
+# Skillora Makefile
+# ==========================
+
+# Run containers
+up: ## Start containers (build if needed)
 	docker compose up --build -d
 
-# Stop containers:
-down:
+down: ## Stop containers
 	docker compose down
 
-# Rebuild the project and run the containers:
-rebuild:
+rebuild: ## Full rebuild (no cache)
 	docker compose down
 	docker compose build --no-cache
 	docker compose up -d
 
-# Run bash inside backend container:
-exec: 
+reset: ## Full reset (remove volumes, rebuild)
+	docker compose down -v
+	docker compose up -d --build
+
+# Shells
+exec: ## Open bash inside backend
 	docker compose exec backend bash
 
-# Open psql shell:
-psql: 
+psql: ## Open PostgreSQL shell
 	docker compose exec db psql -U postgres -d skillora_db
 
-# Application logs:
-logs:
+logs: ## Tail backend logs
 	docker compose logs -f backend
 
-# Full reset:
-reset:
-	docker compose down -v
-	docker compose up -d --build 
-
-# Create a new migration:
-migrate-create:
+# Migrations
+migrate-create: ## Create a new migration (usage: make migrate-create name="desc")
 	docker compose exec backend alembic revision --autogenerate -m "$(name)"
 
-# Apply all migrations:
-migrate-up:
+migrate-up: ## Apply all migrations
 	docker compose exec backend alembic upgrade head
 
-# Revert last migration:
-migrate-down:
+migrate-down: ## Revert last migration
 	docker compose exec backend alembic downgrade -1
 
-# Show current migration:
-migrate-status:
+migrate-status: ## Show current migration
 	docker compose exec backend alembic current
 
+# Helper
+help: ## Show available commands
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
