@@ -1,24 +1,26 @@
-# Run bash inside container:
-exec: 
-	docker compose exec backend bash
-
-# Start containers:
+# Run the containers
 up:
-	docker compose up -d
+	docker compose up --build -d
 
 # Stop containers:
 down:
 	docker compose down
 
-build:
-	docker compose down
-	docker compose up -d --build
-
-build-no-cache:
+# Rebuild the project and run the containers:
+rebuild:
 	docker compose down
 	docker compose build --no-cache
 	docker compose up -d
 
+# Run bash inside backend container:
+exec: 
+	docker compose exec backend bash
+
+# Open psql shell:
+psql: 
+	docker compose exec db psql -U postgres -d skillora_db
+
+# Application logs:
 logs:
 	docker compose logs -f backend
 
@@ -43,6 +45,3 @@ migrate-down:
 migrate-status:
 	docker compose exec backend alembic current
 
-# Open psql shell:
-psql: 
-	docker compose exec db psql -U postgres -d skillora_db
