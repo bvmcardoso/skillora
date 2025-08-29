@@ -1,7 +1,8 @@
 from fastapi import FastAPI, APIRouter, Depends
 
 from app.core.config import settings
-from app.users.routes import router as users_router
+from app.users.router import router as users_router
+from app.jobs.router import router as jobs_router
 from app.infrastructure.db import get_db
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -13,6 +14,7 @@ app = FastAPI()
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(users_router, prefix="/users")
+api_router.include_router(jobs_router, prefix="/jobs")
 app.include_router(api_router)
 
 

@@ -26,6 +26,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend:/app
+      - uploads:/data/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -41,5 +42,7 @@ services:
     command: >
       python -m debugpy --listen 0.0.0.0:5678
       -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 volumes:
   pgdata:
+  uploads:
