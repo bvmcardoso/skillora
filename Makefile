@@ -23,7 +23,7 @@ exec: ## Open bash inside backend
 	docker compose exec backend bash
 
 psql: ## Open PostgreSQL shell
-	docker compose exec db psql -U postgres -d skillora_db
+	docker compose exec db psql -U user -d skillora
 
 logs: ## Tail backend logs
 	docker compose logs -f backend

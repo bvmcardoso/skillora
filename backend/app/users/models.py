@@ -1,10 +1,7 @@
 # ORM models (SQLAlchemy)
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.orm import declarative_base
 from datetime import datetime
 from app.infrastructure.db import Base
-
-
 
 
 class User(Base):
