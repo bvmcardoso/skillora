@@ -16,6 +16,7 @@ async_session = async_sessionmaker(
 
 
 from app.users import models as users_models
+from app.jobs import models as jobs_models
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
