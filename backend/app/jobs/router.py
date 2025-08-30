@@ -1,11 +1,17 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 from pathlib import Path
 from uuid import uuid4
 from app.core.config import settings
+from app.jobs.models import Job
+from app.infrastructure.db import get_db
 from app.workers.tasks import process_file
-from pydantic import BaseModel, Field
-from typing import Dict
+from typing import Dict, Optional, Any, List
 from .schemas import MappingIn
+from celery.result import AsyncResult
+from app.workers.celery_app import celery
+
 
 router = APIRouter()
 
@@ -18,7 +24,7 @@ async def upload_job_file(file: UploadFile = File(...)):
             status.HTTP_400_BAD_REQUEST, "Unsupported file type. Use CSV/XLSX/XLS."
         )
 
-    uploads = Path("/data/uploads")
+    uploads = Path(settings.upload_dir)
     uploads.mkdir(parents=True, exist_ok=True)
 
     file_id = f"{uuid4()}{ext}"
@@ -34,3 +40,64 @@ def map_job_columns(payload: MappingIn):
     # Queue async task
     task = process_file.delay(payload.file_id, payload.column_map)
     return {"task_id": task.id, "status": "queued"}
+
+
+@router.get("/analytics/salary/summary")
+async def salary_summary(
+    title: Optional[str] = None,
+    country: Optional[str] = None,
+    stack: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    q = select(
+        func.percentile_cont(0.5).within_group(Job.salary).label("p50"),
+        func.percentile_cont(0.75).within_group(Job.salary).label("p75"),
+        func.percentile_cont(0.9).within_group(Job.salary).label("p90"),
+        func.count().label("n"),
+    )
+    if title:
+        q = q.where(Job.title.ilike(f"%{title}%"))
+    if country:
+        q = q.where(Job.country.ilike(f"%{country}%"))
+    if stack:
+        q = q.where(Job.stack.ilike(f"%{stack}%"))
+
+    res = await db.execute(q)
+    row = res.mappings().first()
+    return dict(row) if row else {"p50": None, "p75": None, "p90": None, "n": 0}
+
+
+@router.get("/analytics/stack/compare")
+async def stack_compare(
+    title: Optional[str] = None,
+    country: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+) -> List[Dict[str, Any]]:
+    q = (
+        select(
+            Job.stack.label("stack"),
+            func.percentile_cont(0.5).within_group(Job.salary).label("p50"),
+            func.count().label("n"),
+        )
+        .group_by(Job.stack)
+        .order_by(func.percentile_cont(0.5).within_group(Job.salary).desc())
+    )
+
+    if title:
+        q = q.where(Job.title.ilike(f"%{title}%"))
+    if country:
+        q = q.where(Job.country.ilike(f"%{country}%"))
+
+    res = await db.execute(q)
+    return [dict(r) for r in res.mappings().all()]
+
+
+@router.get("/ingest/tasks/{task_id}")
+def get_task_status(task_id: str):
+    r = AsyncResult(task_id, app=celery)
+    payload = {"id": task_id, "state": r.state}
+    if r.successful():
+        payload["result"] = r.result
+    elif r.failed():
+        payload["result"] = r.result
+    return payload

@@ -41,3 +41,6 @@ build/
 # --- Alembic ---
 # mantém migrations no versionador, ignora só cache interno
 backend/app/migrations/__pycache__/
+
+# Uploads:
+data/uploads
