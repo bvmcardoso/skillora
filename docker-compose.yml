@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend:/app
-      - uploads:/data/uploads
+      - ./data/uploads:/data/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -43,6 +43,23 @@ services:
       python -m debugpy --listen 0.0.0.0:5678
       -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONPATH=/app
+    command: celery -A app.workers.celery_app.celery worker -l INFO --concurrency=4 --prefetch-multiplier=1
+
 volumes:
   pgdata:
-  uploads:
