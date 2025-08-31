@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.users.router import router as users_router
@@ -8,9 +9,17 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
-print("✅ Debugpy is listening on port 5678")
+print("Debugpy is listening on port 5678")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=False,  # deixe True só se usar cookies/aut no navegador
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(users_router, prefix="/users")

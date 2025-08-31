@@ -1,0 +1,18 @@
+.metric {
+  background: var(--color-surface);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius-1);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-1);
+
+  &__label {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+  }
+
+  &__value {
+    margin-top: 4px;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+}
