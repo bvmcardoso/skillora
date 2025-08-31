@@ -1,0 +1,9 @@
+.fileUpload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  input[type='file'] {
+    padding: var(--space-2);
+  }
+}

@@ -37,6 +37,13 @@ class Settings(BaseSettings):
         30, validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
 
+    # CORS:
+    cors_origins: str = Field(
+        "http://localhost:5173,http://127.0.0.1:5173",
+        alias="CORS_ORIGINS",
+        validation_alias="CORS_ORIGINS",
+    )
+
     # URLs derivadas (preferem variáveis diretas se existirem)
     @property
     def database_url(self) -> str:
@@ -51,6 +58,10 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/0"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 # Pylance false positive
