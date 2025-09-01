@@ -29,7 +29,7 @@ app.include_router(api_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Skillora backend is running"}
+    return {"message": "Skillora analytics backend is running"}
 
 
 @app.get("/config")
@@ -41,10 +41,10 @@ async def config():
     }
 
 
-@app.get("/ping")
-async def ping(db: Session = Depends(get_db)):
+@app.get("/health")
+async def health(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
-        return {"message": "pong 🏓", "db": "ok"}
+        return {"message": "ok", "db": "ok"}
     except Exception as e:
-        return {"message": "pong 🏓", "db": f"error {str(e)}"}
+        return {"message": "ok", "db": f"error {str(e)}"}
