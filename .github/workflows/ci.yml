@@ -40,7 +40,7 @@ jobs:
 
       - name: List collected tests
         working-directory: backend
-        run: pytest --colect-only -q
+        run: pytest --collect-only -q
 
       - name: Run tests
         working-directory: backend
