@@ -38,6 +38,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: List collected tests
+        working-directory: backend
+        run: pytest --colect-only -q
+
       - name: Run tests
         working-directory: backend
         run: pytest -vv --disable-warnings -ra
