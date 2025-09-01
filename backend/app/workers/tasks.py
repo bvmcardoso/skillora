@@ -31,7 +31,6 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
 
     for col in ("title", "country", "seniority", "stack", "currency"):
         if col in df.columns:
-            # garante string e strip
             df[col] = df[col].astype(str).str.strip()
 
     if "currency" in df.columns:
