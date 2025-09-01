@@ -13,7 +13,15 @@ function AppShell({ view, onChangeView, children }: Props) {
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.header__title}>Skillora Analytics</h1>
+        <div className={styles.header__brand}>
+          <img
+            src="/public/analytics.svg"
+            alt="Skillora Analytics Logo"
+            className="{styles.header__logo}"
+          />
+          <h1 className={styles.header__title}>Skillora Analytics</h1>
+        </div>
+
         <nav className={styles.header__nav}>
           <button
             className={`${styles.header__tab} ${

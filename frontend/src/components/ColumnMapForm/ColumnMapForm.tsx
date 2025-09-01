@@ -9,16 +9,8 @@ type Props = {
   onMapped: (taskId: string) => void;
 };
 
-const PRESET_GENERIC: ColumnMap = {
-  title: 'title',
-  salary: 'salary',
-  currency: 'currency',
-  country: 'country',
-  seniority: 'seniority',
-  stack: 'stack',
-};
-
-const PRESET_SCRAPED: ColumnMap = {
+/** Default mapping aligned with CSV */
+const DEFAULT_MAP: ColumnMap = {
   title: 'job_title',
   salary: 'compensation',
   currency: 'currency',
@@ -27,8 +19,10 @@ const PRESET_SCRAPED: ColumnMap = {
   stack: 'stack',
 };
 
-export default function ColumnMapForm({ fileId, onMapped }: Props) {
-  const [map, setMap] = useState<ColumnMap>(PRESET_SCRAPED);
+const FIELDS = ['title', 'salary', 'currency', 'country', 'seniority', 'stack'] as const;
+
+function ColumnMapForm({ fileId, onMapped }: Props) {
+  const [map, setMap] = useState<ColumnMap>(DEFAULT_MAP);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,9 +36,9 @@ export default function ColumnMapForm({ fileId, onMapped }: Props) {
     setError(null);
     try {
       const resp = await mapColumns(fileId, map);
-      onMapped(resp.task_id);
+      onMapped(resp.taskId); // normalized camelCase
     } catch (err: any) {
-      setError(err.message || 'Failure on mapping columns');
+      setError(err.message || 'Failed to map columns');
     } finally {
       setLoading(false);
     }
@@ -54,41 +48,38 @@ export default function ColumnMapForm({ fileId, onMapped }: Props) {
     <div className={styles.mapForm}>
       <div className={styles.mapForm__head}>
         <h3 className={styles.mapForm__title}>Column Mapping</h3>
-        <div className={styles.mapForm__presets}>
-          <button
-            type="button"
-            className={styles.mapForm__presetBtn}
-            onClick={() => setMap(PRESET_GENERIC)}
-            disabled={loading}
-          >
-            Use generic preset
-          </button>
-          <button
-            type="button"
-            className={styles.mapForm__presetBtn}
-            onClick={() => setMap(PRESET_SCRAPED)}
-            disabled={loading}
-          >
-            Use scraped preset
-          </button>
-        </div>
+        <p className={styles.mapForm__hint}>Use the exact column names from your CSV</p>
       </div>
 
-      <form className={styles.mapForm__grid} onSubmit={onSubmit}>
-        {(['title', 'salary', 'currency', 'country', 'seniority', 'stack'] as const).map((k) => (
-          <div key={k} className={styles.mapForm__row}>
-            <label className={styles.mapForm__label}>{k}</label>
-            <input
-              className={styles.mapForm__input}
-              type="text"
-              value={map[k]}
-              onChange={(e) => onChange(k, e.target.value)}
-              placeholder={`csv column name to ${k}`}
-              required
-              disabled={loading}
-            />
-          </div>
-        ))}
+      <form onSubmit={onSubmit} className={styles.mapForm__form}>
+        <div className={styles.mapForm__tableWrap}>
+          <table className={styles.mapForm__table}>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>CSV column</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FIELDS.map((k) => (
+                <tr key={k}>
+                  <td className={styles.mapForm__field}>{k}</td>
+                  <td>
+                    <input
+                      className={styles.mapForm__input}
+                      type="text"
+                      value={map[k]}
+                      onChange={(e) => onChange(k, e.target.value)}
+                      placeholder={`CSV column for ${k}`}
+                      required
+                      disabled={loading}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <div className={styles.mapForm__actions}>
           <button className={styles.mapForm__submit} type="submit" disabled={loading}>
@@ -102,3 +93,5 @@ export default function ColumnMapForm({ fileId, onMapped }: Props) {
     </div>
   );
 }
+
+export default ColumnMapForm;
