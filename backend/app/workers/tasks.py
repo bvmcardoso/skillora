@@ -31,7 +31,7 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
 
     for col in ("title", "country", "seniority", "stack", "currency"):
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].fillna("").astype(str).str.strip()
 
     if "currency" in df.columns:
         df["currency"] = df["currency"].replace({None: "USD", "": "USD"}).fillna("USD")
