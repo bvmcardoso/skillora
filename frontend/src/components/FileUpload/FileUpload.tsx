@@ -3,7 +3,7 @@ import styles from './FileUpload.module.scss';
 import { uploadFile } from '../../lib/api';
 import Spinner from '../Spinner/Spinner';
 import Alert from '../Alert/Alert';
-
+import FileUploadButton from '../FileUploadButton/FileUploadButton';
 type Props = { onUploaded: (fileId: string) => void };
 
 function pickFileId(resp: any): string | null {
@@ -26,7 +26,6 @@ export default function FileUpload({ onUploaded }: Props) {
 
     try {
       const resp = await uploadFile(file);
-      console.log('[upload resp]', resp);
       const id = pickFileId(resp);
       if (!id) {
         setError('Upload succeeded, but file_id not found in response.');
@@ -42,9 +41,24 @@ export default function FileUpload({ onUploaded }: Props) {
 
   return (
     <div className={styles.fileUpload}>
+      <FileUploadButton
+        onChange={handleChange}
+        accept=".csv,.xls,.xlsx"
+        disabled={loading}
+        buttonType="upload"
+      >
+        Upload file
+      </FileUploadButton>
+      {/* 
       <label>
-        <input type="file" accept=".csv,.xlsx" onChange={handleChange} disabled={loading} />
-      </label>
+        <input
+          type="file"
+          accept=".csv,.xlsx"
+          onChange={handleChange}
+          disabled={loading}
+          className="button"
+        />
+      </label> */}
 
       {loading && <Spinner />}
       {error && <Alert message={error} />}
