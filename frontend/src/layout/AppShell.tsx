@@ -25,7 +25,7 @@ function AppShell({ view, onChangeView, children }: Props) {
         <nav className={styles.header__nav}>
           <button
             className={`${styles.header__tab} ${
-              view === 'upload' ? styles['header__tab-active'] : ''
+              view === 'upload' ? styles['header__tab--active'] : ''
             }`}
             onClick={() => onChangeView('upload')}
           >
