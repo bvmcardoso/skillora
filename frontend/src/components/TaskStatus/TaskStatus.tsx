@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from './TaskStatus.module.scss';
 import { taskStatus, type TaskStatusResp } from '../../lib/api';
 import { poll } from '../../lib/poll';
-import Spinner from '../../components/Spinner/Spinner';
-import Alert from '../../components/Alert/Alert';
 
 type Props = { taskId: string };
 
@@ -75,9 +73,6 @@ function TaskStatus({ taskId }: Props) {
           </div>
         )}
       </div>
-
-      {loading && <Spinner />}
-      {error && <Alert message={error} />}
     </div>
   );
 }

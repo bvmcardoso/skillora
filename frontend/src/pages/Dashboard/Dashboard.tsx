@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import styles from './Dashboard.module.scss';
 import Metric from '../../components/Metric/Metric';
-import Spinner from '../../components/Spinner/Spinner';
-import Alert from '../../components/Alert/Alert';
 import {
   salarySummary,
   stackCompare,
@@ -60,9 +58,6 @@ function Dashboard() {
   return (
     <div className={styles.dashboard}>
       <h2>Analytics</h2>
-
-      {loading && <Spinner />}
-      {error && <Alert message={error} />}
 
       {!loading && !error && (
         <>
