@@ -3,13 +3,16 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyc
 *.pyd
 *.so
 *.egg-info/
 dist/
 build/
 
-# --- Environment / configs locais ---
+#Python cache / compiled files:
+
+# --- Environment / local configs ---
 .env
 *.env
 *.log
@@ -39,12 +42,11 @@ build/
 .idea/
 
 # --- Alembic ---
-# mantém migrations no versionador, ignora só cache interno
+# Just ignore internal cache
 backend/app/migrations/__pycache__/
 
 # Uploads:
 data/uploads
-
 
 # dependencies
 node_modules/
@@ -59,3 +61,5 @@ build/
 .env
 .env.*
 *.log
+
+

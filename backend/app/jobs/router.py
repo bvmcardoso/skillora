@@ -38,7 +38,12 @@ async def upload_job_file(file: UploadFile = File(...)):
 @router.post("/ingest/map")
 def map_job_columns(payload: MappingIn):
     # Queue async task
-    task = process_file.delay(payload.file_id, payload.column_map)
+    task = process_file.apply_async(
+        kwargs={
+            "file_id": payload.file_id,
+            "column_map": dict(payload.column_map),
+        }
+    )
     return {"task_id": task.id, "status": "queued"}
 
 
@@ -95,9 +100,18 @@ async def stack_compare(
 @router.get("/ingest/tasks/{task_id}")
 def get_task_status(task_id: str):
     r = AsyncResult(task_id, app=celery)
-    payload = {"id": task_id, "state": r.state}
-    if r.successful():
+
+    meta = r.info if isinstance(r.info, dict) else None
+
+    payload = {
+        "id": task_id,
+        "state": r.state,  # PENDING | STARTED | PROGRESS | RETRY | FAILURE | SUCCESS
+        "meta": meta,
+        "ready": r.ready(),
+        "successful": r.ready() and r.successful(),
+    }
+
+    if r.ready():
         payload["result"] = r.result
-    elif r.failed():
-        payload["result"] = r.result
+
     return payload

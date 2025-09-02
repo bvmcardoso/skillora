@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import styles from './FileUpload.module.scss';
 import { uploadFile } from '../../lib/api';
-import Spinner from '../Spinner/Spinner';
-import Alert from '../Alert/Alert';
 import FileUploadButton from '../FileUploadButton/FileUploadButton';
 type Props = { onUploaded: (fileId: string) => void };
 
@@ -49,19 +47,6 @@ export default function FileUpload({ onUploaded }: Props) {
       >
         Upload file
       </FileUploadButton>
-      {/* 
-      <label>
-        <input
-          type="file"
-          accept=".csv,.xlsx"
-          onChange={handleChange}
-          disabled={loading}
-          className="button"
-        />
-      </label> */}
-
-      {loading && <Spinner />}
-      {error && <Alert message={error} />}
     </div>
   );
 }

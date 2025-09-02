@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import styles from './ColumnMapForm.module.scss';
 import { mapColumns, type ColumnMap } from '../../lib/api';
-import Spinner from '../Spinner/Spinner';
-import Alert from '../Alert/Alert';
 
 type Props = {
   fileId: string;
@@ -87,9 +85,6 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
           </button>
         </div>
       </form>
-
-      {loading && <Spinner />}
-      {error && <Alert message={error} />}
     </div>
   );
 }
