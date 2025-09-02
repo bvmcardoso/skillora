@@ -76,5 +76,20 @@ services:
       - PYTHONPATH=/app
     command: celery -A app.workers.celery_app.celery worker -l INFO --concurrency=4 --prefetch-multiplier=1
 
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -lc "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/frontend/node_modules
+    ports:
+      - '5173:5173'
+    depends_on:
+      backend:
+        condition: service_started
 volumes:
   pgdata:
+  frontend_node_modules:
