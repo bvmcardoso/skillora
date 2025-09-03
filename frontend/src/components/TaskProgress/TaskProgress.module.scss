@@ -1,0 +1,29 @@
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
+  &__label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  &__bar {
+    width: 180px;
+    height: 6px;
+    border-radius: 4px;
+    background: #eee;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: var(--brand-600, #2563eb);
+    transition: width 0.25s ease;
+  }
+
+  &__count {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+}

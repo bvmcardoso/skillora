@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styles from './ColumnMapForm.module.scss';
 import { mapColumns, type ColumnMap } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 type Props = {
   fileId: string;
@@ -33,10 +34,11 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
     setLoading(true);
     setError(null);
     try {
+      toast.loading('Processing...');
       const resp = await mapColumns(fileId, map);
       onMapped(resp.taskId); // normalized camelCase
     } catch (err: any) {
-      setError(err.message || 'Failed to map columns');
+      setError(err?.message || 'Failed to map columns');
     } finally {
       setLoading(false);
     }
@@ -81,8 +83,9 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
 
         <div className={styles.mapForm__actions}>
           <button className={styles.mapForm__submit} type="submit" disabled={loading}>
-            Map and process
+            {loading ? 'Starting…' : 'Map and process'}
           </button>
+          {error && <div className={styles.mapForm__error}>{error}</div>}
         </div>
       </form>
     </div>
