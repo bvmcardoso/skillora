@@ -39,16 +39,34 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _update_state(self: Any | None, *, state: str, meta: dict) -> None:
+    """Update state when running via Celery; tests (self=None) don't do anything."""
+    if self is not None and hasattr(self, "update_state"):
+        try:
+            self.update_state(state=state, meta=meta)
+        except Exception:
+            pass
+
+
 @celery.task(name="process_file", bind=True)
-def process_file(self, file_id: str, column_map: dict) -> dict:
+def process_file(
+    self: Any | None = None, file_id: str = "", column_map: dict | None = None
+) -> dict:
     uploads = Path(settings.upload_dir)
     path = uploads / file_id
     if not path.exists():
         return {"file_id": file_id, "error": "file not found"}
 
     # Load dataframe
-    self.update_state(state="STARTED", meta={"stage": "loading"})
+    _update_state(self, state="STARTED", meta={"stage": "loading"})
     df = _load_dataframe(path)
+
+    if not column_map:
+        return {
+            "file_id": file_id,
+            "error": "invalid_mapping",
+            "columns": list(df.columns),
+        }
 
     # Validate/rename columns based on mapping
     rename_map: Dict[str, str] = {
@@ -102,7 +120,8 @@ def process_file(self, file_id: str, column_map: dict) -> dict:
             percent = int(processed * 100 / max(total, 1))
 
             # Emit PROGRESS after each committed batch
-            self.update_state(
+            _update_state(
+                self,
                 state="PROGRESS",
                 meta={"processed": processed, "total": total, "percent": percent},
             )

@@ -80,7 +80,9 @@ def setup_tasks_for_test(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 def test_process_file_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     tasks = setup_tasks_for_test(tmp_path, monkeypatch)
-    res = tasks.process_file("does_not_exist.csv", {"title": "Title"})
+    res = tasks.process_file(
+        file_id="does_not_exist.csv", column_map={"title": "Title"}
+    )
     assert res["file_id"] == "does_not_exist.csv"
     assert res["error"] == "file not found"
 
@@ -89,7 +91,9 @@ def test_process_file_invalid_mapping(tmp_path: Path, monkeypatch: pytest.Monkey
     tasks = setup_tasks_for_test(tmp_path, monkeypatch)
     p = tmp_path / "data.csv"
     pd.DataFrame({"WrongA": ["x"], "WrongB": ["y"]}).to_csv(p, index=False)
-    res = tasks.process_file("data.csv", {"title": "Title", "salary": "Salary"})
+    res = tasks.process_file(
+        file_id="data.csv", column_map={"title": "Title", "salary": "Salary"}
+    )
     assert res["error"] == "invalid mapping"
     assert set(res["columns"]) == {"WrongA", "WrongB"}
 
@@ -118,7 +122,7 @@ def test_process_file_normalization_empty(
         "seniority": "Seniority",
         "stack": "Stack",
     }
-    res = tasks.process_file("data.csv", column_map)
+    res = tasks.process_file(file_id="data.csv", column_map=column_map)
     assert res["inserted"] == 0
     assert "no valid rows" in res["note"]
 
@@ -146,7 +150,7 @@ def test_process_file_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "stack": "Stack",
     }
 
-    res = tasks.process_file("data.csv", column_map)
+    res = tasks.process_file(file_id="data.csv", column_map=column_map)
     assert res["file_id"] == "data.csv"
     assert res["inserted"] == 2
     assert isinstance(res["sample"], list)
