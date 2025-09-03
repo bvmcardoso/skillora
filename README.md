@@ -3,6 +3,8 @@
 Upload job salary datasets (CSV/XLSX), process them asynchronously, and explore insights via analytics APIs.  
 **Stack:** FastAPI • Celery • Redis • Postgres • SQLAlchemy • Docker
 
+[![CI](https://github.com/bvmcardoso/skillora/actions/workflows/ci.yml/badge.svg)](https://github.com/bvmcardoso/skillora/actions)
+
 > Demo dataset: `backend/sample_data/jobs_dataset_reference.csv`
 
 ---

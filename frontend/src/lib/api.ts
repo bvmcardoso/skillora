@@ -1,4 +1,3 @@
-// frontend/src/lib/api.ts
 import { API_BASE, joinUrl } from './env';
 
 /* ========= Public types (camelCase) ========= */
@@ -9,13 +8,20 @@ export type ColumnMap = Record<ColumnKey, string>;
 export type UploadResponse = { fileId: string };
 export type MapResponse = { taskId: string };
 
-export type TaskStatusState = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE';
+export type CeleryState = 'PENDING' | 'STARTED' | 'PROGRESS' | 'RETRY' | 'FAILURE' | 'SUCCESS';
+
 export type TaskStatusResp = {
-  taskId: string;
-  status: TaskStatusState;
-  message?: string;
+  id: string;
+  state: CeleryState;
+  meta?: {
+    processed?: number;
+    total?: number;
+    percent?: number;
+    [k: string]: any;
+  };
+  ready: boolean;
+  successful: boolean;
   result?: unknown;
-  progress?: number;
 };
 
 /* ========= Raw (internal) ========= */
@@ -27,11 +33,10 @@ type RawTaskStatus = {
   id?: string;
   status?: string;
   state?: string;
-  message?: string;
-  error?: string;
-  detail?: string;
+  meta?: any;
   result?: unknown;
-  progress?: number;
+  ready?: boolean;
+  successful?: boolean;
 };
 
 export type SalarySummary = {
@@ -62,16 +67,6 @@ const toCamel = (s: string) => s.replace(/[_-](\w)/g, (_, c: string) => c.toUppe
 const normalizeKeys = (obj: Record<string, any>) =>
   Object.fromEntries(Object.entries(obj ?? {}).map(([k, v]) => [toCamel(k), v]));
 
-/** Normalize status aliases to a stable UI set */
-const mapStatus = (s?: string): TaskStatusState => {
-  const v = (s ?? '').toUpperCase();
-  if (v === 'QUEUED' || v === 'WAITING' || v === 'PENDING') return 'PENDING';
-  if (v === 'PROCESSING' || v === 'STARTED' || v === 'RUNNING') return 'RUNNING';
-  if (v === 'DONE' || v === 'COMPLETED' || v === 'SUCCESS') return 'SUCCESS';
-  if (v === 'FAILED' || v === 'ERROR' || v === 'FAILURE') return 'FAILURE';
-  return 'PENDING';
-};
-
 /* ========= Normalizers ========= */
 
 function normalizeUpload(raw: RawUploadResponse): UploadResponse {
@@ -89,12 +84,15 @@ function normalizeMap(raw: RawMapResponse): MapResponse {
 
 function normalizeTaskStatus(raw: RawTaskStatus): TaskStatusResp {
   const n = normalizeKeys(raw) as any;
+  const p = n.meta?.percent;
+  const bounded = typeof p === 'number' ? Math.max(0, Math.min(100, Math.round(p))) : undefined;
   return {
-    taskId: (n.taskId ?? n.id ?? '') as string,
-    status: mapStatus(n.status ?? n.state),
-    message: n.message ?? n.error ?? n.detail,
+    id: (n.taskId ?? n.id ?? '') as string,
+    state: (n.state ?? n.status ?? 'PENDING').toUpperCase() as CeleryState,
+    meta: n.meta ? { ...n.meta, percent: bounded } : undefined,
+    ready: Boolean(n.ready),
+    successful: Boolean(n.successful),
     result: n.result,
-    progress: typeof n.progress === 'number' ? n.progress : undefined,
   };
 }
 
