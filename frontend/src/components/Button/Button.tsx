@@ -1,30 +1,75 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import styles from './Button.module.scss';
 
-const BUTTON_TYPE_CLASSES = {
-  inverted: 'inverted',
+const BUTTON_STYLE_CLASSES = {
+  default: 'default',
   upload: 'upload',
 } as const;
 
-type ButtonType = keyof typeof BUTTON_TYPE_CLASSES;
+type ButtonType = keyof typeof BUTTON_STYLE_CLASSES;
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  buttonType?: ButtonType;
+  buttonStyle?: ButtonType;
+  accept?: string;
+  multiple?: boolean;
+  onFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-const Button: React.FC<ButtonProps> = ({ children, buttonType, className, ...otherProps }) => {
+const Button: React.FC<ButtonProps> = ({
+  children,
+  buttonStyle,
+  className,
+  accept,
+  multiple,
+  onFileChange,
+  ...otherProps
+}) => {
   const base = styles['button-container'];
-  const variantKey = buttonType ? BUTTON_TYPE_CLASSES[buttonType] : undefined;
+  const variantKey = buttonStyle ? BUTTON_STYLE_CLASSES[buttonStyle] : undefined;
   const variant = variantKey && styles[variantKey] ? styles[variantKey] : '';
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (accept) {
+      e.preventDefault();
+      inputRef.current?.click();
+    }
+    otherProps.onClick?.(e);
+  };
   return (
-    <button
-      type="button"
-      className={[base, variant, className].filter(Boolean).join(' ')}
-      {...otherProps}
-    >
-      {children}
-    </button>
+    <>
+      {accept && (
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          onChange={onFileChange}
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      )}
+      <button
+        type={otherProps.type ?? 'button'}
+        className={[base, variant, className].filter(Boolean).join(' ')}
+        onClick={handleClick}
+        {...otherProps}
+      >
+        {children}
+      </button>
+    </>
   );
 };
 

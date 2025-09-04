@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import styles from './FileUpload.module.scss';
 import { uploadFile } from '../../lib/api';
-import FileUploadButton from '../FileUploadButton/FileUploadButton';
+import Button from '../Button/Button';
 import toast from 'react-hot-toast';
 
 type Props = { onUploaded: (fileId: string) => void };
@@ -40,13 +39,9 @@ const pickFileId = (resp: unknown): string | null => {
 };
 
 function FileUpload({ onUploaded }: Props) {
-  const [loading, setLoading] = useState(false);
-
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLoading(true);
-    toast.loading('Upload started');
 
     try {
       const resp = await uploadFile(file);
@@ -61,20 +56,15 @@ function FileUpload({ onUploaded }: Props) {
         toast.error(err?.message || 'Upload failed');
       }
     } finally {
-      setLoading(false);
+      toast.success('File uploaded successfully!', { duration: 2000 });
     }
   }
 
   return (
     <div className={styles.fileUpload}>
-      <FileUploadButton
-        onChange={handleChange}
-        accept=".csv,.xls,.xlsx"
-        disabled={loading}
-        buttonType="upload"
-      >
+      <Button accept=".csv,.xls,.xlsx" buttonStyle="default" onFileChange={handleChange}>
         Upload file
-      </FileUploadButton>
+      </Button>
     </div>
   );
 }

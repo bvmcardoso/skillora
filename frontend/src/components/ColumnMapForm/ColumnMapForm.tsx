@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './ColumnMapForm.module.scss';
 import { mapColumns, type ColumnMap } from '../../lib/api';
-import toast from 'react-hot-toast';
+import Button from '../Button/Button';
 
 type Props = {
   fileId: string;
@@ -22,7 +22,6 @@ const FIELDS = ['title', 'salary', 'currency', 'country', 'seniority', 'stack'] 
 
 function ColumnMapForm({ fileId, onMapped }: Props) {
   const [map, setMap] = useState<ColumnMap>(DEFAULT_MAP);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function onChange(key: keyof ColumnMap, val: string) {
@@ -31,18 +30,14 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     try {
-      toast.loading('Processing...');
       const resp = await mapColumns(fileId, map);
       onMapped(resp.taskId); // normalized camelCase
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err?.message || 'Failed to map columns');
       }
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -74,7 +69,6 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
                       onChange={(e) => onChange(k, e.target.value)}
                       placeholder={`CSV column for ${k}`}
                       required
-                      disabled={loading}
                     />
                   </td>
                 </tr>
@@ -84,9 +78,9 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
         </div>
 
         <div className={styles.mapForm__actions}>
-          <button className={styles.mapForm__submit} type="submit" disabled={loading}>
-            {loading ? 'Starting…' : 'Map and process'}
-          </button>
+          <Button buttonStyle="default" type="submit">
+            Map and process
+          </Button>
           {error && <div className={styles.mapForm__error}>{error}</div>}
         </div>
       </form>
