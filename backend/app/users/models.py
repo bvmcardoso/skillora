@@ -1,6 +1,8 @@
 # ORM models (SQLAlchemy)
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
+
 from app.infrastructure.db import Base
 
 

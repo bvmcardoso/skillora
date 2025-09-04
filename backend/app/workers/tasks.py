@@ -1,11 +1,13 @@
-import pandas as pd
 from pathlib import Path
 from typing import Any, Dict, List, cast
+
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from app.workers.celery_app import celery
+
 from app.core.config import settings
 from app.jobs.models import Job
+from app.workers.celery_app import celery
 
 CANON: list[str] = ["title", "salary", "currency", "country", "seniority", "stack"]
 

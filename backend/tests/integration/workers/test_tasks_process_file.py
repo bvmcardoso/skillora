@@ -1,9 +1,8 @@
 # backend/tests/integration/workers/test_tasks_process_file.py
 # Integration tests for app.workers.tasks.process_file using stubs.
 
-import os
-import sys
 import importlib
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 

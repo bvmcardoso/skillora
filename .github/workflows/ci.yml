@@ -5,30 +5,37 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - 'Makefile'
       - '.github/workflows/ci.yml'
   push:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - 'Makefile'
       - '.github/workflows/ci.yml'
 
 concurrency:
-  group: ci-${{github.ref}}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   backend:
-    name: Backend - pytest
+    name: Backend • lint + tests
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          caches: 'pip'
+          cache: 'pip'
           cache-dependency-path: |
             backend/requirements*.txt
 
@@ -38,10 +45,65 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: List collected tests
+      - name: Ruff (lint)
+        working-directory: backend
+        run: ruff check . --no-cache
+
+      - name: Black (check only)
+        working-directory: backend
+        run: black --check .
+
+      - name: Pytest (list collected)
         working-directory: backend
         run: pytest --collect-only -q
 
-      - name: Run tests
+      - name: Pytest (run)
         working-directory: backend
-        run: pytest -vv --disable-warnings -ra
+        run: pytest -vv -ra
+
+  frontend:
+    name: Frontend • lint + typecheck + tests + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify lockfile (debug)
+        run: |
+          pwd
+          ls -la
+          if [ -f package-lock.json ]; then echo "lockfile OK"; else echo "no lockfile"; fi
+
+      - name: Setup Node (with cache)
+        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # fallback: sem cache
+      - name: Setup Node (no cache)
+        if: ${{ hashFiles('frontend/package-lock.json') == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm ci || npm install
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck (tsc)
+        run: npm run typecheck
+
+      - name: Vitest
+        run: npm run test -- --run
+
+      - name: Build (Vite)
+        run: npm run build

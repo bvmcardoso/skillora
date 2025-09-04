@@ -25,7 +25,9 @@ export default function TaskProgress({ taskId, onFinish }: Props) {
           onFinish?.(next);
           return;
         }
-      } catch {}
+      } catch {
+        // intentionally empty
+      }
       timer.current = window.setTimeout(tick, POLL_MS);
     };
 

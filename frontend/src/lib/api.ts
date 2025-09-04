@@ -17,7 +17,7 @@ export type TaskStatusResp = {
     processed?: number;
     total?: number;
     percent?: number;
-    [k: string]: any;
+    [k: string]: unknown;
   };
   ready: boolean;
   successful: boolean;
@@ -33,7 +33,7 @@ type RawTaskStatus = {
   id?: string;
   status?: string;
   state?: string;
-  meta?: any;
+  meta?: unknown;
   result?: unknown;
   ready?: boolean;
   successful?: boolean;
@@ -64,7 +64,7 @@ type RequestOptions = {
 
 /** snake/kebab -> camel (shallow keys) */
 const toCamel = (s: string) => s.replace(/[_-](\w)/g, (_, c: string) => c.toUpperCase());
-const normalizeKeys = (obj: Record<string, any>) =>
+const normalizeKeys = (obj: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(obj ?? {}).map(([k, v]) => [toCamel(k), v]));
 
 /* ========= Normalizers ========= */
@@ -82,8 +82,25 @@ function normalizeMap(raw: RawMapResponse): MapResponse {
   return { taskId };
 }
 
+interface NormalizedMeta {
+  percent?: number;
+  [key: string]: unknown;
+}
+
+interface NormalizedTask {
+  taskId?: string;
+  id?: string;
+  state?: string;
+  status?: string;
+  meta?: NormalizedMeta;
+  ready?: boolean;
+  successful?: boolean;
+  result?: unknown;
+  [key: string]: unknown;
+}
+
 function normalizeTaskStatus(raw: RawTaskStatus): TaskStatusResp {
-  const n = normalizeKeys(raw) as any;
+  const n = normalizeKeys(raw) as NormalizedTask;
   const p = n.meta?.percent;
   const bounded = typeof p === 'number' ? Math.max(0, Math.min(100, Math.round(p))) : undefined;
   return {
@@ -96,9 +113,37 @@ function normalizeTaskStatus(raw: RawTaskStatus): TaskStatusResp {
   };
 }
 
-/* ========= HTTP ========= */
+/* ========= HTTP (typed, no any) ========= */
 
-async function request<T>(
+// Error type carrying status and payload for consistent handling across the app.
+export class ApiError extends Error {
+  readonly status: number;
+  readonly payload: unknown;
+
+  constructor(message: string, status: number, payload: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
+// Extract human-friendly detail from unknown payload.
+function getErrorDetail(payload: unknown): string {
+  if (payload && typeof payload === 'object' && 'detail' in (payload as Record<string, unknown>)) {
+    const d = (payload as Record<string, unknown>)['detail'];
+    if (typeof d === 'string') return d;
+  }
+  if (typeof payload === 'string') return payload;
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return '';
+  }
+}
+
+// JSON-only request (use when expecting application/json)
+async function requestJson<T>(
   path: string,
   { method = 'GET', body, headers, signal }: RequestOptions = {}
 ): Promise<T> {
@@ -109,19 +154,13 @@ async function request<T>(
   const isJson = ct.includes('application/json');
 
   if (!res.ok) {
-    const errorPayload = isJson ? await res.json().catch(() => ({})) : await res.text();
-    const detail =
-      (typeof errorPayload === 'object' && errorPayload && (errorPayload as any).detail) ||
-      (typeof errorPayload === 'string' ? errorPayload : JSON.stringify(errorPayload));
-    const err = new Error(`[${res.status}] ${res.statusText} - ${detail}`);
-    // @ts-expect-error attach debug info
-    err.payload = errorPayload;
-    // @ts-expect-error attach status
-    err.status = res.status;
-    throw err;
+    const payload: unknown = isJson ? await res.json().catch(() => ({})) : await res.text();
+    const detail = getErrorDetail(payload);
+    const msg = `[${res.status}] ${res.statusText}${detail ? ` - ${detail}` : ''}`;
+    throw new ApiError(msg, res.status, payload);
   }
 
-  return (isJson ? res.json() : await res.text()) as T;
+  return (await res.json()) as T;
 }
 
 /* ========= Endpoints ========= */
@@ -133,7 +172,7 @@ const ANALYTICS = 'api/jobs/analytics';
 export async function uploadFile(file: File, signal?: AbortSignal): Promise<UploadResponse> {
   const form = new FormData();
   form.append('file', file);
-  const raw = await request<RawUploadResponse>(`${INGEST}/upload`, {
+  const raw = await requestJson<RawUploadResponse>(`${INGEST}/upload`, {
     method: 'POST',
     body: form,
     signal,
@@ -148,7 +187,7 @@ export async function mapColumns(
   signal?: AbortSignal
 ): Promise<MapResponse> {
   const body = JSON.stringify({ file_id: fileId, column_map: columnMap });
-  const raw = await request<RawMapResponse>(`${INGEST}/map`, {
+  const raw = await requestJson<RawMapResponse>(`${INGEST}/map`, {
     method: 'POST',
     body,
     headers: { 'Content-Type': 'application/json' },
@@ -159,7 +198,7 @@ export async function mapColumns(
 
 /** GET /api/jobs/ingest/tasks/{task_id} -> TaskStatusResp */
 export async function taskStatus(taskId: string, signal?: AbortSignal): Promise<TaskStatusResp> {
-  const raw = await request<RawTaskStatus>(`${INGEST}/tasks/${encodeURIComponent(taskId)}`, {
+  const raw = await requestJson<RawTaskStatus>(`${INGEST}/tasks/${encodeURIComponent(taskId)}`, {
     method: 'GET',
     signal,
     headers: { 'Cache-Control': 'no-cache' },
@@ -168,24 +207,84 @@ export async function taskStatus(taskId: string, signal?: AbortSignal): Promise<
 }
 
 /** GET /api/jobs/analytics/salary/summary -> SalarySummary */
+type RawSalarySummary = {
+  data?: {
+    p50?: unknown;
+    p75?: unknown;
+    p90?: unknown;
+    n?: unknown;
+    median?: unknown;
+    count?: unknown;
+  };
+  p50?: unknown;
+  p75?: unknown;
+  p90?: unknown;
+  n?: unknown;
+  median?: unknown;
+  count?: unknown;
+};
+
 export async function salarySummary(signal?: AbortSignal): Promise<SalarySummary> {
-  const raw = await request<any>(`${ANALYTICS}/salary/summary`, { method: 'GET', signal });
-  const d = raw?.data ?? raw ?? {};
+  const raw = await requestJson<RawSalarySummary>(`${ANALYTICS}/salary/summary`, {
+    method: 'GET',
+    signal,
+  });
+
+  const container: { [k: string]: unknown } =
+    (raw?.data as Record<string, unknown> | undefined) ?? (raw as Record<string, unknown>) ?? {};
+
+  const num = (v: unknown, fallback = 0) => (typeof v === 'number' ? v : Number(v ?? fallback));
+
   return {
-    p50: Number(d.p50 ?? d.median ?? 0),
-    p75: Number(d.p75 ?? 0),
-    p90: Number(d.p90 ?? 0),
-    n: Number(d.n ?? d.count ?? 0),
+    p50: num(container['p50'] ?? container['median'], 0),
+    p75: num(container['p75'], 0),
+    p90: num(container['p90'], 0),
+    n: num(container['n'] ?? container['count'], 0),
   };
 }
 
 /** GET /api/jobs/analytics/stack/compare -> StackCompareRow[] */
+type RawStackCompareRow = {
+  stack?: unknown;
+  tech?: unknown;
+  p50?: unknown;
+  median?: unknown;
+  n?: unknown;
+  count?: unknown;
+};
+type RawStackCompare = { data?: unknown } | unknown;
+
 export async function stackCompare(signal?: AbortSignal): Promise<StackCompareRow[]> {
-  const raw = await request<any>(`${ANALYTICS}/stack/compare`, { method: 'GET', signal });
-  const arr: any[] = raw?.data ?? raw ?? [];
-  return arr.map((r) => ({
-    stack: String(r?.stack ?? r?.tech ?? '-'),
-    p50: Number(r?.p50 ?? r?.median ?? 0),
-    n: Number(r?.n ?? r?.count ?? 0),
-  }));
+  const raw = await requestJson<RawStackCompare>(`${ANALYTICS}/stack/compare`, {
+    method: 'GET',
+    signal,
+  });
+
+  // Accept either { data: [...] } or [...]
+  const container = raw as { data?: unknown } | unknown;
+  const maybeArr = (container as { data?: unknown })?.data ?? container;
+  if (!Array.isArray(maybeArr)) return [];
+
+  return (maybeArr as unknown[]).map((r) => {
+    const row = r as RawStackCompareRow;
+
+    const stack =
+      typeof row.stack === 'string' ? row.stack : typeof row.tech === 'string' ? row.tech : '-';
+
+    const p50 =
+      typeof row.p50 === 'number'
+        ? row.p50
+        : typeof row.median === 'number'
+        ? row.median
+        : Number((row.p50 as unknown) ?? (row.median as unknown) ?? 0);
+
+    const n =
+      typeof row.n === 'number'
+        ? row.n
+        : typeof row.count === 'number'
+        ? row.count
+        : Number((row.n as unknown) ?? (row.count as unknown) ?? 0);
+
+    return { stack: String(stack), p50: Number(p50), n: Number(n) };
+  });
 }

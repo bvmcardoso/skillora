@@ -1,13 +1,12 @@
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.core.config import settings
-from app.users.router import router as users_router
-from app.jobs.router import router as jobs_router
-from app.infrastructure.db import get_db
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.infrastructure.db import get_db
+from app.jobs.router import router as jobs_router
+from app.users.router import router as users_router
 
 print("Debugpy is listening on port 5678")
 

@@ -1,9 +1,8 @@
 # Pydantic schemas (Input/Output) - Serializers
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 # Used for user creation:
@@ -32,8 +31,7 @@ class UserOut(BaseModel):
 class UserRead(UserOut):
     pass
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
