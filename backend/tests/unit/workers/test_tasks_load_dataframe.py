@@ -1,6 +1,6 @@
-import sys
 import importlib
 from pathlib import Path
+
 import pandas as pd
 
 tasks = importlib.import_module("app.workers.tasks")

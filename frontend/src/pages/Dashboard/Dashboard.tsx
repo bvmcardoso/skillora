@@ -31,9 +31,11 @@ function Dashboard() {
         setSummary(s);
         setStacks(Array.isArray(rows) ? rows : []);
       })
-      .catch((e: any) => {
-        if (e?.name === 'AbortError') return;
-        setError(e?.message || 'Failed to load analytics');
+      .catch((e: unknown) => {
+        if (e instanceof Error) {
+          if (e?.name === 'AbortError') return;
+          setError(e?.message || 'Failed to load analytics');
+        }
       })
       .finally(() => setLoading(false));
 

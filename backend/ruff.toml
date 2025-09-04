@@ -1,0 +1,11 @@
+# backend/ruff.toml
+line-length = 150
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I"]         # basic: pycodestyle, pyflakes, isort
+ignore = []
+
+[lint.per-file-ignores]
+# Alembic env imports are side-effectful (model discovery) and often after sys.path tweaks
+"app/migrations/env.py" = ["E402", "F401"]

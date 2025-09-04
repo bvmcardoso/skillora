@@ -1,6 +1,8 @@
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
+
 from app.core.config import settings
 
 # Base class for all models:
@@ -13,10 +15,6 @@ engine = create_async_engine(DATABASE_URL, echo=settings.debug)
 async_session = async_sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
 )
-
-
-from app.users import models as users_models
-from app.jobs import models as jobs_models
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

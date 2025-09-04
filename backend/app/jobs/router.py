@@ -1,17 +1,19 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
-from app.core.config import settings
-from app.jobs.models import Job
-from app.infrastructure.db import get_db
-from app.workers.tasks import process_file
-from typing import Dict, Optional, Any, List
-from .schemas import MappingIn
-from celery.result import AsyncResult
-from app.workers.celery_app import celery
 
+from celery.result import AsyncResult
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.infrastructure.db import get_db
+from app.jobs.models import Job
+from app.workers.celery_app import celery
+from app.workers.tasks import process_file
+
+from .schemas import MappingIn
 
 router = APIRouter()
 
@@ -60,6 +62,9 @@ async def salary_summary(
         func.percentile_cont(0.9).within_group(Job.salary).label("p90"),
         func.count().label("n"),
     )
+
+    q = q.where(Job.salary.isnot(None))
+
     if title:
         q = q.where(Job.title.ilike(f"%{title}%"))
     if country:
@@ -87,6 +92,8 @@ async def stack_compare(
         .group_by(Job.stack)
         .order_by(func.percentile_cont(0.5).within_group(Job.salary).desc())
     )
+
+    q = q.where(Job.salary.isnot(None))
 
     if title:
         q = q.where(Job.title.ilike(f"%{title}%"))

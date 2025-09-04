@@ -37,8 +37,10 @@ function ColumnMapForm({ fileId, onMapped }: Props) {
       toast.loading('Processing...');
       const resp = await mapColumns(fileId, map);
       onMapped(resp.taskId); // normalized camelCase
-    } catch (err: any) {
-      setError(err?.message || 'Failed to map columns');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err?.message || 'Failed to map columns');
+      }
     } finally {
       setLoading(false);
     }

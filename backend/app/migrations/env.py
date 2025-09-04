@@ -1,16 +1,16 @@
 # app/migrations/env.py
+import asyncio
 import os
 import sys
-import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import MetaData, pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 # ---- Bootstrapping do path / .env ----
 from dotenv import load_dotenv
+from sqlalchemy import MetaData, pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 load_dotenv()
 
