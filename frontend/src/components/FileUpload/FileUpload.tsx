@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import styles from './FileUpload.module.scss';
 import { uploadFile } from '../../lib/api';
 import Button from '../Button/Button';

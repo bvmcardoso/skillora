@@ -9,11 +9,24 @@ const POLL_MS = 1200;
 
 export default function TaskStatus({ taskId }: Props) {
   const [s, setS] = useState<TaskStatusResp | null>(null);
-  const timer = useRef<number | null>(null);
-  const firedRef = useRef(false);
+  const pollTimerRef = useRef<number | null>(null);
+
+  const loadingTimerRef = useRef<number | null>(null);
+  const loadingShownRef = useRef(false);
+  const finishedRef = useRef(false); // garante que não dispara duas vezes
 
   useEffect(() => {
     let cancelled = false;
+
+    // Schedule "Processing…" if time takes more than 800ms
+    if (loadingTimerRef.current) window.clearTimeout(loadingTimerRef.current);
+    loadingShownRef.current = false;
+    finishedRef.current = false;
+
+    loadingTimerRef.current = window.setTimeout(() => {
+      toast.loading('Processing…', { id: `task:${taskId}` });
+      loadingShownRef.current = true;
+    }, 800);
 
     const tick = async () => {
       try {
@@ -21,30 +34,42 @@ export default function TaskStatus({ taskId }: Props) {
         if (!cancelled) {
           setS(next);
           if (!next.ready) {
-            timer.current = window.setTimeout(tick, POLL_MS);
+            pollTimerRef.current = window.setTimeout(tick, POLL_MS);
           }
         }
       } catch {
-        timer.current = window.setTimeout(tick, POLL_MS);
+        pollTimerRef.current = window.setTimeout(tick, POLL_MS);
       }
     };
 
     tick();
     return () => {
       cancelled = true;
-      if (timer.current) window.clearTimeout(timer.current);
+      if (pollTimerRef.current) window.clearTimeout(pollTimerRef.current);
+      if (loadingTimerRef.current) window.clearTimeout(loadingTimerRef.current);
     };
   }, [taskId]);
 
   useEffect(() => {
-    if (!s?.ready || firedRef.current) return;
-    firedRef.current = true;
+    if (!s?.ready || finishedRef.current) return;
+    finishedRef.current = true;
+
+    if (loadingTimerRef.current) {
+      window.clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
 
     const toastId = `task:${s.id}`;
     if (s.successful) {
-      toast.success('Processing finished successfully!', { id: toastId });
+      toast.success('Processing finished successfully!', {
+        id: toastId,
+        duration: 2000,
+      });
     } else {
-      toast.error('Processing failed. Check logs for details.', { id: toastId });
+      toast.error('Processing failed. Check logs for details.', {
+        id: toastId,
+        duration: 7000,
+      });
     }
   }, [s?.ready, s?.successful, s?.id]);
 
