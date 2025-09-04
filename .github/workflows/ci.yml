@@ -63,12 +63,14 @@ jobs:
         run: pytest -vv -ra
 
   frontend:
-    name: Frontend • lint + typecheck + tests + build
+    name: Frontend - lint + typecheck + tests + build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -78,21 +80,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install deps
-        working-directory: frontend
         run: npm ci
 
       - name: ESLint
-        working-directory: frontend
         run: npm run lint
 
       - name: Typecheck (tsc)
-        working-directory: frontend
         run: npm run typecheck
 
       - name: Vitest
-        working-directory: frontend
         run: npm run test -- --run
 
       - name: Build (Vite)
-        working-directory: frontend
         run: npm run build
