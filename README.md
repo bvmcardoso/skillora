@@ -1,7 +1,7 @@
 # Skillora Analytics (Jobs)
 
 Upload job salary datasets (CSV/XLSX), process them asynchronously, and explore insights via analytics APIs.  
-**Stack:** FastAPI • Celery • Redis • Postgres • SQLAlchemy • React • Vite • TypeScript • Docker
+**Stack:** FastAPI • Celery • Redis • Postgres • SQLAlchemy • React • Vite • TypeScript • Docker • GitHub Actions
 
 [![CI](https://github.com/bvmcardoso/skillora/actions/workflows/ci.yml/badge.svg)](https://github.com/bvmcardoso/skillora/actions)
 
@@ -16,7 +16,7 @@ make up
 # 2) Apply database migrations
 make migrate-up
 
-# 3) Run tests
+# 3) Run tests (Both Backend and Frontend)
 make test
 ```
 
@@ -27,23 +27,52 @@ make test
 
 ## Project layout
 
-```
+### Backend Folder Structure(Detailed)
+
+**The backend is organized widh clear separation of concerns** 
+
+- **core** → runtime settings, environment variables, CORS, feature flags  
+- **infrastructure** → database engine, session management, common dependencies  
+- **users / jobs** → domain modules (models, routers, schemas, services)  
+- **workers** → Celery app and background tasks (file ingestion, analytics)  
+- **tests** → unit tests, integration tests  
+- **migrations** → Alembic versioned schema migrations  
+
+#### Short overview (at a glance)
+```text
 backend/
-├─ app/                 # FastAPI app (core, users, jobs, workers)
-├─ migrations/          # Alembic migrations
-├─ requirements.txt
-└─ sample_data/         # Reference dataset
-
-frontend/
-├─ src/                 # React + Vite app
-├─ package.json
-└─ vite.config.ts
-
-docker-compose.yml      # Orchestrates services
-Makefile                # Developer shortcuts
+├─ app/{core,infrastructure,users,jobs,workers,migrations}
+├─ tests/{unit,integration}
+├─ sample_data/
+└─ {alembic.ini,pytest.ini,requirements.txt,ruff.toml}
 ```
 
----
+### Frontend Folder Structure(Detailed)
+**The frontend is built with React + Vite + TypeScript.  
+Clear separation between components, pages, layout, styles, and utilities** 
+
+- **components** → reusable UI blocks (button, upload form, progress/status)  
+- **pages** → top-level routes (Dashboard, Upload Wizard)  
+- **layout** → application shell and layout elements  
+- **lib** → API client, environment helpers, formatters, polling utilities  
+- **styles** → SCSS tokens, themes, and global styles  
+- **test** → testing setup (Vitest + React Testing Library)  
+
+#### Short overview (at a glance)
+```
+frontend/
+├─ src/{components,pages,layout,lib,styles,test}
+├─ public/
+├─ {index.html,vite.config.ts,vitest.config.ts,tsconfig*.json,eslint.config.js}
+└─ {package.json,package-lock.json}
+```
+
+## **Tooling & CI (repo root):** ##
+
+ `docker-compose.yml`, `Makefile`, `.github/workflows/ci.yml`.  
+> See the full **[CI/CD](#CI/CD)** section below.
+
+
 
 ## Environment
 
@@ -53,16 +82,28 @@ APP_NAME=skillora
 ENVIRONMENT=development
 DEBUG=True
 
-DB_HOST=db
-DB_PORT=5432
 DB_NAME=skillora
 DB_USER=user
 DB_PASSWORD=password
+DB_HOST=db
+DB_PORT=5432
+
+DATABASE_URL=postgresql+asyncpg://user:password@db:5432/skillora
+ALEMBIC_DATABASE_URL=postgresql+psycopg://user:password@db:5432/skillora
 
 REDIS_HOST=redis
 REDIS_PORT=6379
-
+REDIS_URL=redis://redis:6379/0
 UPLOAD_DIR=/data/uploads
+
+PYTHONPATH=/app
+
+SECRET_KEY=my_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
 ```
 
 ### Frontend (`frontend/.env.example`)
@@ -149,12 +190,112 @@ make ci-local                         # run full local CI pipeline
   - Pytest (backend tests)
   - Vitest (frontend tests)
   - Vite build (frontend build)
-
 ---
+
+## Appendix
+
+### Full Backend tree 
+
+```
+backend/
+├── alembic.ini
+├── pytest.ini
+├── requirements.txt
+├── ruff.toml
+├── sample_data/
+│   └── jobs_dataset_reference.csv
+├── tests/
+│   ├── unit/
+│   │   ├── api/
+│   │   └── workers/
+│   └── integration/
+│       └── workers/
+└── app/
+    ├── main.py
+    ├── core/
+    │   └── config.py
+    ├── infrastructure/
+    │   ├── db.py
+    │   └── __init__.py
+    ├── users/
+    │   ├── auth.py
+    │   ├── models.py
+    │   ├── router.py
+    │   ├── schemas.py
+    │   └── services.py
+    ├── jobs/
+    │   ├── models.py
+    │   ├── router.py
+    │   └── schemas.py
+    ├── workers/
+    │   ├── celery_app.py
+    │   └── tasks.py
+    └── migrations/
+        ├── env.py
+        ├── README
+        ├── script.py.mako
+        └── versions/
+
+```
+
+### Full Frontend tree
+
+```
+frontend/
+├── dist/                        # Production build output
+│   ├── index.html
+│   ├── analytics.svg
+│   └── assets/                  # Bundled JS/CSS/images
+├── public/                      # Static assets (served as-is)
+│   └── analytics.svg
+├── src/
+│   ├── main.tsx                 # Entry point
+│   ├── App.tsx                  # Root component
+│   ├── components/              # Reusable building blocks
+│   │   ├── Button/
+│   │   ├── ColumnMapForm/
+│   │   ├── FileUpload/
+│   │   ├── Metric/
+│   │   ├── TaskProgress/
+│   │   └── TaskStatus/
+│   ├── pages/                   # Route-level views
+│   │   ├── Dashboard/
+│   │   └── UploadWizard/
+│   ├── layout/                  # App shell and wrappers
+│   │   ├── AppShell.module.scss
+│   │   └── AppShell.tsx
+│   ├── lib/                     # Utilities & API client
+│   │   ├── api.ts
+│   │   ├── api.test.ts
+│   │   ├── env.ts
+│   │   ├── format.ts
+│   │   └── poll.ts
+│   ├── styles/                  # Global styles & tokens
+│   │   ├── base.scss
+│   │   ├── layout.scss
+│   │   ├── themes.scss
+│   │   └── tokens.scss
+│   ├── test/
+│   │   └── setupTests.ts        # Vitest/RTL setup
+│   └── vite-env.d.ts            # Vite type declarations
+├── index.html
+├── eslint.config.js             # ESLint configuration
+├── vite.config.ts               # Vite config
+├── vitest.config.ts             # Vitest config
+├── tsconfig.json                # TypeScript base config
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── package.json
+├── package-lock.json
+└── README.md
+```
+
+
 
 ## Notes
 
-- `data/uploads/` is runtime storage, not versioned.  
-- Celery worker consumes upload tasks from Redis.  
-- Frontend is minimal: upload → map → status → dashboard.  
-- Project demonstrates a full stack MVP with typed APIs and automated pipeline.
+- `data/uploads/` is runtime storage, not versioned  
+- Celery worker consumes upload tasks from Redis  
+- Frontend flow: upload → map → status → dashboard  
+- Sample data under `sample_data/` is **synthetic and for demo only** — not real salaries  
+- Demonstrates a full-stack MVP with typed APIs and automated CI/CD pipeline
